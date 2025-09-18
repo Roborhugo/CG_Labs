@@ -26,14 +26,35 @@ glm::mat4 CelestialBody::render(std::chrono::microseconds elapsed_time,
 	// milliseconds, the following would have been used:
 	// auto const elapsed_time_ms = std::chrono::duration<float, std::milli>(elapsed_time).count();
 
-	_body.spin.rotation_angle = -glm::half_pi<float>() / 2.0f;
+	//_body.spin.rotation_angle = -glm::half_pi<float>() / 2.0f; //Removed: 1.2.5
 
 	glm::mat4 world = parent_transform;
+	glm::mat4 child_transform = parent_transform;
 
 	if (show_basis)
 	{
 		bonobo::renderBasis(1.0f, 2.0f, view_projection, world);
 	}
+
+	//1.3
+	glm::mat4 T_o = glm::translate(glm::mat4(1.0f), glm::vec3(_body.orbit.radius, 0.0f, 0.0f)); //1.3.1, orbit radius
+	_body.orbit.rotation_angle += _body.orbit.speed * elapsed_time_s; //1.3.3
+	glm::mat4 R_1_o = glm::rotate(glm::mat4(1.0f), _body.orbit.rotation_angle, glm::vec3(0.0f, 1.0f, 0.0f)); //1.3.3, orbit rotation
+	glm::mat4 R_2_o = glm::rotate(glm::mat4(1.0f), _body.orbit.inclination, glm::vec3(0.0f, 0.0f, 1.0f)); //1.3.5, orbit tilt
+	world *= R_2_o * R_1_o * T_o; //1.3.6
+	child_transform *= R_2_o * R_1_o * T_o; //1.4.2
+
+	//1.2
+	_body.spin.rotation_angle += _body.spin.speed * elapsed_time_s; //1.2.5
+	glm::mat4 R_1_s = glm::rotate(glm::mat4(1.0f), _body.spin.rotation_angle, glm::vec3(0.0f, 1.0f, 0.0f)); //1.2.1, spin rotation
+	glm::mat4 R_2_s = glm::rotate(glm::mat4(1.0f), _body.spin.axial_tilt, glm::vec3(0.0f, 0.0f, 1.0f)); //1.2.3, spin tilt
+	world *= R_2_s * R_1_s ; // 1.2.6
+	child_transform *= R_2_s; //1.4.2
+
+	//1.1
+	//this->set_scale(glm::vec3(1, 0.2f, 0.2f)); //1.1.4
+	glm::mat4 S = glm::scale(glm::mat4(1.0f), _body.scale); // 1.1.1
+	world *= S; //1.1.2
 
 	// Note: The second argument of `node::render()` is supposed to be the
 	// parent transform of the node, not the whole world matrix, as the
@@ -42,8 +63,15 @@ glm::mat4 CelestialBody::render(std::chrono::microseconds elapsed_time,
 	// of the node is just the identity matrix and we can forward the whole
 	// world matrix.
 	_body.node.render(view_projection, world);
+	if (_ring.is_set) {
+		glm::mat4 ring_transforms = glm::mat4(1.0f);
+		glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(_ring.scale, 1.0f));
+		glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::half_pi<float>(), glm::vec3(1.0f, 0.0f, 0.0f));
+		ring_transforms *= child_transform * scale * rotation;
+		_ring.node.render(view_projection, ring_transforms);
+	}
 
-	return parent_transform;
+	return child_transform;
 }
 
 void CelestialBody::add_child(CelestialBody* child)
