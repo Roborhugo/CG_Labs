@@ -36,8 +36,8 @@ glm::mat4 CelestialBody::render(std::chrono::microseconds elapsed_time,
 	_body.orbit.rotation_angle += _body.orbit.speed * elapsed_time_s; //1.3.3
 	glm::mat4 R_1_o = glm::rotate(glm::mat4(1.0f), _body.orbit.rotation_angle, glm::vec3(0.0f, 1.0f, 0.0f)); //1.3.3, orbit rotation
 	glm::mat4 R_2_o = glm::rotate(glm::mat4(1.0f), _body.orbit.inclination, glm::vec3(0.0f, 0.0f, 1.0f)); //1.3.5, orbit tilt
-	world *= R_2_o * R_1_o * T_o; //1.3.6
-	child_transform *= R_2_o * R_1_o * T_o; //1.4.2
+	world *= R_2_o * R_1_o * T_o * glm::inverse(R_1_o); //1.3.6
+	child_transform *= R_2_o * R_1_o * T_o * glm::inverse(R_1_o); //1.4.2
 
 	//1.2
 	_body.spin.rotation_angle += _body.spin.speed * elapsed_time_s; //1.2.5
