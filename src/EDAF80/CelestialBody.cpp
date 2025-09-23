@@ -31,11 +31,6 @@ glm::mat4 CelestialBody::render(std::chrono::microseconds elapsed_time,
 	glm::mat4 world = parent_transform;
 	glm::mat4 child_transform = parent_transform;
 
-	if (show_basis)
-	{
-		bonobo::renderBasis(1.0f, 2.0f, view_projection, world);
-	}
-
 	//1.3
 	glm::mat4 T_o = glm::translate(glm::mat4(1.0f), glm::vec3(_body.orbit.radius, 0.0f, 0.0f)); //1.3.1, orbit radius
 	_body.orbit.rotation_angle += _body.orbit.speed * elapsed_time_s; //1.3.3
@@ -69,6 +64,11 @@ glm::mat4 CelestialBody::render(std::chrono::microseconds elapsed_time,
 		glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::half_pi<float>(), glm::vec3(1.0f, 0.0f, 0.0f));
 		ring_transforms *= child_transform * scale * rotation;
 		_ring.node.render(view_projection, ring_transforms);
+	}
+
+	if (show_basis)
+	{
+		bonobo::renderBasis(1.0f, 2.0f, view_projection, world);
 	}
 
 	return child_transform;
