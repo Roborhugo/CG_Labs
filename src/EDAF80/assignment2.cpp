@@ -43,12 +43,14 @@ void
 edaf80::Assignment2::run()
 {
 	// Load the sphere geometry
-	auto const shape = parametric_shapes::createCircleRing(2.0f, 0.75f, 40u, 4u);
+	//auto const shape = parametric_shapes::createCircleRing(2.0f, 0.75f, 40u, 4u);
+	//auto const shape = parametric_shapes::createQuad(0.25f, 0.15f); //2.1.2
+	auto const shape = parametric_shapes::createSphere(0.15f, 10u, 10u); //2.2
 	if (shape.vao == 0u)
 		return;
 
 	// Set up the camera
-	mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 1.0f, 9.0f));
+	mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 1.0f, 9.0f)); //2.1.1, 2.4.1
 	mCamera.mMouseSensitivity = glm::vec2(0.003f);
 	mCamera.mMovementSpeed = glm::vec3(3.0f); // 3 m/s => 10.8 km/h
 
@@ -216,15 +218,33 @@ edaf80::Assignment2::run()
 		if (interpolate) {
 			//! \todo Interpolate the movement of a shape between various
 			//!        control points.
+			float const full_trip_time = 10.0f;
+			float const point_to_point_time = full_trip_time / static_cast<float>(control_point_locations.size());
+
+			float const current_trip_time = fmod(elapsed_time_s, full_trip_time);
+			float const current_point_to_point_time = fmod(current_trip_time, point_to_point_time);
+
+			float const current_point_to_point_relative_position = current_point_to_point_time / point_to_point_time;
+			int const current_point_index = static_cast<int>(current_trip_time / point_to_point_time);
+
 			if (use_linear) {
-				//! \todo Compute the interpolated position
-				//!       using the linear interpolation.
+				glm::vec3 p0 = control_point_locations[current_point_index];
+				glm::vec3 p1 = control_point_locations[(current_point_index + 1) % control_point_locations.size()];
+
+				glm::vec3 pt = interpolation::evalLERP(p0, p1, current_point_to_point_relative_position);
+
+				circle_rings.get_transform().SetTranslate(pt);
 			}
 			else {
-				//! \todo Compute the interpolated position
-				//!       using the Catmull-Rom interpolation;
-				//!       use the `catmull_rom_tension`
-				//!       variable as your tension argument.
+
+				glm::vec3 p0 = control_point_locations[((current_point_index - 1) + control_point_locations.size()) % control_point_locations.size()];
+				glm::vec3 p1 = control_point_locations[current_point_index];
+				glm::vec3 p2 = control_point_locations[(current_point_index + 1) % control_point_locations.size()];
+				glm::vec3 p3 = control_point_locations[(current_point_index + 2) % control_point_locations.size()];
+
+				glm::vec3 pt = interpolation::evalCatmullRom(p0, p1, p2, p3, catmull_rom_tension, current_point_to_point_relative_position);
+
+				circle_rings.get_transform().SetTranslate(pt);
 			}
 		}
 
