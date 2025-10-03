@@ -163,7 +163,7 @@ parametric_shapes::createSphere(float const radius,
 
 			// texture coordinates
 			// I haven't the faintest idea
-			//texcoords[index] = glm::vec3(0.0f, 0.0f, 0.0f);
+			texcoords[index] = glm::vec3(0.0f, 0.0f, 0.0f);
 
 			// tangent
 			tangents[index] = glm::vec3(radius * cos_theta * sin_phi,
@@ -177,6 +177,9 @@ parametric_shapes::createSphere(float const radius,
 
 			// normal
 			normals[index] = glm::cross(tangents[index], binormals[index]);
+			//normals[index] = glm::vec3(radius * radius * sin_theta * sin_phi * sin_phi,
+			//	radius * radius * sin_phi * cos_phi,
+			//	radius * radius * cos_theta * sin_phi * sin_phi);
 
 			phi += d_phi;
 			++index;
@@ -194,15 +197,21 @@ parametric_shapes::createSphere(float const radius,
 	{
 		for (unsigned int j = 0u; j < latitude_edges_count; ++j)
 		{
-			index_sets[index] = glm::uvec3(latitude_vertices_count * (i + 0u) + (j + 0u),
-				latitude_vertices_count * (i + 0u) + (j + 1u),
-				latitude_vertices_count * (i + 1u) + (j + 1u));
-			++index;
+			// Prevents "overwrap" at top of sphere
+			if (j != latitude_edges_count - 1) {
+				index_sets[index] = glm::uvec3(latitude_vertices_count * (i + 0u) + (j + 0u),
+					latitude_vertices_count * (i + 1u) + (j + 1u),
+					latitude_vertices_count * (i + 0u) + (j + 1u));
+				++index;
+			}
 
-			index_sets[index] = glm::uvec3(latitude_vertices_count * (i + 0u) + (j + 0u),
-				latitude_vertices_count * (i + 1u) + (j + 1u),
-				latitude_vertices_count * (i + 1u) + (j + 0u));
-			++index;
+			// Prevents "overwrap" at bottom of sphere
+			if (j != 0) {
+				index_sets[index] = glm::uvec3(latitude_vertices_count * (i + 0u) + (j + 0u),
+					latitude_vertices_count * (i + 1u) + (j + 0u),
+					latitude_vertices_count * (i + 1u) + (j + 1u));
+				++index;
+			}
 		}
 
 	}
